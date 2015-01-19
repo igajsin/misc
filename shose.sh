@@ -2,8 +2,11 @@
 
 set -e
 
-_env () (virsh net-list|grep admin|cut -d " " -f 2 | xargs echo -n)
-_net () (xargs virsh net-info| grep Bridge|awk '{print $2}'|xargs ip a l|grep inet|awk '{print $2}')
-_print() (sed s/\_admin/' '/)
+_env () (virsh net-list|grep admin|cut -d " " -f 2)
 
-_env |tee >(_net) | _print
+_ip () (virsh net-info $1| grep Bridge|awk '{print $2}'|xargs ip a l|grep inet|awk '{print $2}')
+
+for s in $(_env); do
+    ip= _ip $s
+    echo ${s%_admin} $ip
+done
