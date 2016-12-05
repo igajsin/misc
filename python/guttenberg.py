@@ -73,9 +73,15 @@ def main():
 if __name__ == "__main__":
     main()
 
-def add_word(str, trie):
-    cur_c = trie
-    for c in str:
-	cur_c = cur_c.add_normal_char(c)
-    cur_c.add_delimiter()
-    return trie
+
+def add_str(str, words=set()):
+    if len(str) == "":
+        return words
+    else:
+        cur_c = None
+        for c in str:
+            if cur_c:  # add letter to the current word
+                pass
+            else:  # begin new word
+                pass
+    return words
