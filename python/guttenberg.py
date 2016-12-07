@@ -5,6 +5,8 @@
 import argparse
 import logging
 from pathlib import Path
+import pdb
+import re
 import sys
 
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
@@ -62,6 +64,18 @@ class Trie(object):
         else:
             return self.add_delimiter()
 
+    def to_list(self):
+        """Make ordered list from that Trie."""
+        childs = self.childs()
+        if childs:
+            lst = []
+            for trie in childs:
+                lst = lst + trie.to_list()
+            ret = map(lambda p: (self.char + p[0], p[1]), lst)
+            return ret
+        else:
+            return [(self.char, self.num)]
+
 
 def find_char(char, words):
     """Find start-letter between words."""
@@ -92,26 +106,60 @@ def handle_file(fn, words=set([])):
     """Extract words from file fn."""
     f = open(fn, 'r')
     for line in f:
-        words = add_str(line, words)
+        words = add_str(line.strip('\n').replace('\r',''), words)
     return words
 
-def words2list(words, lst=[]):
+
+def find_fq_words(n, words):
+    """Find the first n more frequent words."""
+    l = []
     for word in words:
+        l = l + word.to_list()
+    l.sort(key=lambda x: x[1], reverse=True)
+    num = min([n, len(l)])
+    return l[:num]
 
+def kiss_handle_file(fn, words={}):
+    with open(fn, 'r') as f:
+        for line in f:
+            new_words = re.split('\W+', line)
+            for word in new_words:
+                try:
+                    words[word] = words[word] + 1
+                except:
+                    words[word] = 1
+    return words
 
-
-
-def main(fn, num):
-    """Main entry point."""
-    words = set([])
+def do_simple(fn, num):
+    """Do it by the KISS way."""
     p = Path(fn)
+    words = {}
     if p.is_file() and p.exists():
-        words = handle_file(p.as_posix(), words)
+        words = kiss_handle_file(fn, words=words)
     else:
         for f in p.iterdir():
-            if f.exists():
-                words = handle_file(f.as_posix(), words)
-    print words
+            words = kiss_handle_file(f.as_posix(), words=words)
+    del words['']
+    l = [(words[k], k) for k in words]
+    l.sort(reverse=True)
+    n = min([num, len(l)])
+    return l[:n]
+
+
+def main(fn, num, simple):
+    """Main entry point."""
+    if simple:
+        print do_simple(fn, num)
+    else:
+        words = set([])
+        p = Path(fn)
+        if p.is_file() and p.exists():
+            words = handle_file(p.as_posix(), words)
+        else:
+            for f in p.iterdir():
+                if f.exists():
+                    words = handle_file(f.as_posix(), words)
+        print find_fq_words(num, words)
     sys.exit(0)
 
 
@@ -121,5 +169,8 @@ if __name__ == "__main__":
                                       "with text for calculation"))
     parser.add_argument("-n", "--num", help="amount of most frequent words",
                         default=10, type=int)
+    parser.add_argument("-s", "--simple",
+                        help="use simplier version of the algorithm.",
+                        action="store_true")
     args = parser.parse_args()
-    main(args.path, args.num)
+    main(args.path, args.num, args.simple)
