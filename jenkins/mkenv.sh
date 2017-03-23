@@ -24,7 +24,7 @@ function run_test () { # iso_path env_name workspace_path python_venv job_name
     python_venv=$4
     job_name=$5
     test_group=$6
-    $fuel_qa/utils/jenkins/system_tests.sh -t test -w $workspace_path -e $env_name -o --group=$test_group -i $iso_path -V $python_venv -j $job_name -K
+    $workspace_path/utils/jenkins/system_tests.sh -t test -w $workspace_path -e $env_name -o --group=$test_group -i $iso_path -V $python_venv -j $job_name -K
 
 }
 
